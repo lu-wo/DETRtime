@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=4 python main.py --batch_size 32 --eval --data_path /mnt/ds3lab-scratch/veichta/Datasets/EEG/ICML_participant_streams_thresh_150_seqlen_4000_margin_2/tensors/tensors --resume runs/balanced_standard/checkpoint.pth --backbone pcnn --back_channels 16 --back_layers 6 --scaler Standard --output_dir ./runs/eval
