@@ -1,69 +1,76 @@
 import os
+
 import numpy as np
 import pandas as pd
 
 # define the Task name
 Task = {
-    'LR_task' : {
-        '-' : 'LR'
+    "LR_task": {"-": "LR"},
+    "Direction_task": {
+        "amplitude": "Amplitude",
+        "angle": "Angle",
     },
-    'Direction_task' : {
-        'amplitude' : 'Amplitude',
-        'angle' : 'Angle',
+    "Position_task": {
+        "-": "Absolute Pos",
     },
-    'Position_task' : {
-        '-' : 'Absolute Pos',
-    }
 }
 
 # define the values format
 def f(x, n, shift=None, tol=8):
     if shift:
-        x = x*10**shift
+        x = x * 10**shift
     if abs(x) < 10**-tol:
-        return '0'
-    if int(x*10**n) == 0:
-        return f'\\num{{{x:.0e}}}'
-    else:
-        return f'{x:.{n}f}'
+        return "0"
+    return f"\\num{{{x:.0e}}}" if int(x * 10**n) == 0 else f"{x:.{n}f}"
+
 
 def print_table(directory, preprocessing=None):
     for f1 in sorted(os.listdir(directory)):
-        cur_dir = directory+'/'+f1
+        cur_dir = directory + "/" + f1
 
         config_file = None
         stat_files = []
 
         for f2 in os.listdir(cur_dir):
-            if 'config' in f2:
+            if "config" in f2:
                 config_file = f2
-            elif 'statistics' in f2:
+            elif "statistics" in f2:
                 stat_files.append(f2)
 
         if config_file != None:
-            config = np.loadtxt(cur_dir+'/'+config_file, dtype=str)
+            config = np.loadtxt(cur_dir + "/" + config_file, dtype=str)
 
             if preprocessing and config[2] != preprocessing:
                 continue
 
             for stats in sorted(stat_files):
 
-                metrics = pd.read_csv(cur_dir+'/'+stats)
+                metrics = pd.read_csv(cur_dir + "/" + stats)
 
-                stats = stats.replace('statistics_', '')
-                label = os.path.splitext(stats)[0] if 'statistics' not in stats else '-'
+                stats = stats.replace("statistics_", "")
+                label = os.path.splitext(stats)[0] if "statistics" not in stats else "-"
 
-                #txt1 = f'{{{config[0]}}} & {{{config[1]}}} & {{{config[2]}}} & {{{label}}} & '
-                txt1 = f'{{{Task[config[0]][label]}}} & '
-                shift = 2 if config[0] == 'LR_task' else None
+                # txt1 = f'{{{config[0]}}} & {{{config[1]}}} & {{{config[2]}}} & {{{label}}} & '
+                txt1 = f"{{{Task[config[0]][label]}}} & "
+                shift = 2 if config[0] == "LR_task" else None
 
-                for i in metrics.index :
+                for i in metrics.index:
                     row = metrics.loc[i]
-                    x0, x1, x2, x3, x4 = row['Model'], row['Mean_score'], row['Std_score'], row['Mean_runtime'], row['Std_runtime']
-                    txt2 = f'{{{x0}}} & {f(x1, 4, shift=shift)} & {f(x2, 4, shift=shift)} & {f(x3, 3)} & {f(x4, 3)} \\\\'
+                    x0, x1, x2, x3, x4 = (
+                        row["Model"],
+                        row["Mean_score"],
+                        row["Std_score"],
+                        row["Mean_runtime"],
+                        row["Std_runtime"],
+                    )
+                    txt2 = (
+                        f"{{{x0}}} & {f(x1, 4, shift=shift)} & {f(x2, 4, shift=shift)} "
+                        + f"& {f(x3, 3)} & {f(x4, 3)} \\\\"
+                    )
                     print(txt1 + txt2)
 
-#def statistics():
+
+# def statistics():
 #    directory = 'results/Victor_results/_data_properties/'
 
 #    for f in os.listdir(directory):

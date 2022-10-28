@@ -1,10 +1,11 @@
+import logging
 from abc import ABC
 
-from DL_Models.torch_models.BaseNetTorch import BaseNet
 import torch
 import torch.nn as nn
-import logging
+from DL_Models.torch_models.BaseNetTorch import BaseNet
 from DL_Models.torch_models.Modules import Pad_Conv, Pad_Pool
+
 
 class ConvNet(ABC, BaseNet):
     """
@@ -12,15 +13,38 @@ class ConvNet(ABC, BaseNet):
     Inherit from this class and only implement _module() and _get_nb_features_output_layer() methods
     Modules are then stacked in the forward() pass of the model 
     """
-    def __init__(self, model_name, path, loss, model_number, batch_size, input_shape, output_shape, kernel_size=32, epochs=2, nb_filters=32, verbose=True,
-                use_residual=False, depth=6, nb_outlayer_channels=3, preprocessing = False):
+    def __init__(
+        self, 
+        model_name, 
+        path, 
+        loss, 
+        model_number, 
+        batch_size, 
+        input_shape, 
+        output_shape, 
+        kernel_size=32, 
+        epochs=2, 
+        nb_filters=32,
+        verbose=True,        
+        use_residual=False, 
+        depth=6, 
+        nb_outlayer_channels=3, 
+        preprocessing=False):
         """
         We define the layers of the network in the __init__ function
         """
+        super().__init__(
+            model_name=model_name, 
+            path=path, 
+            loss=loss, 
+            input_shape=input_shape, 
+            output_shape=output_shape, 
+            epochs=epochs, 
+            verbose=verbose, 
+            model_number=model_number
+        )
         self.batch_size = batch_size
-        self.nb_outlayer_channels = nb_outlayer_channels 
-        super().__init__(model_name=model_name, path=path, loss=loss, input_shape=input_shape, output_shape=output_shape, epochs=epochs, verbose=verbose,
-                            model_number=model_number)
+        self.nb_outlayer_channels = nb_outlayer_channels
 
         self.use_residual = use_residual
         self.depth = depth
@@ -35,20 +59,23 @@ class ConvNet(ABC, BaseNet):
         self.gap_layer = nn.AvgPool1d(kernel_size=2, stride=1)
         self.gap_layer_pad = Pad_Pool(left=0, right=1, value=0)
 
-        logging.info(f"Number of model parameters: {sum(p.numel() for p in self.parameters())}")
-        logging.info(f"Number of trainable parameters: {sum(p.numel() for p in self.parameters() if p.requires_grad)}")
-        logging.info('--------------- use residual : ' + str(self.use_residual))
-        logging.info('--------------- depth        : ' + str(self.depth))
-        logging.info('--------------- batch_size        : ' + str(self.batch_size))
-        logging.info('--------------- kernel size  : ' + str(self.kernel_size))
-        logging.info('--------------- nb filters   : ' + str(self.nb_filters))
-        logging.info('--------------- preprocessing: ' + str(self.preprocessing))
+        n_params = sum(p.numel() for p in self.parameters())
+        logging.info(f"Number of model parameters: {n_params}")
+        n_trainable =sum(p.numel() for p in self.parameters() if p.requires_grad)
+        logging.info(f"Number of trainable parameters: {n_trainable}")
+        logging.info(f'--------------- use residual : {str(self.use_residual)}')
+        logging.info(f'--------------- depth        : {str(self.depth)}')
+        logging.info(f'--------------- batch_size        : {str(self.batch_size)}')
+        logging.info(f'--------------- kernel size  : {str(self.kernel_size)}')
+        logging.info(f'--------------- nb filters   : {str(self.nb_filters)}')
+        logging.info(f'--------------- preprocessing: {str(self.preprocessing)}')
         
 
     def forward(self, x):
         """
         Implements the forward pass of the network
-        Modules defined in a class implementing ConvNet are stacked and shortcut connections are used if specified. 
+        Modules defined in a class implementing ConvNet are stacked and shortcut connections are 
+        used if specified. 
         """
         #changed from training
         x = x.permute(0, 2, 1)
@@ -95,8 +122,10 @@ class ConvNet(ABC, BaseNet):
     # abstract method
     def get_nb_channels_output_layer(self):
         """
-        Return the number of channels that the convolution before output layer should take as input to reduce them to 1 channel
-        This method has to be implemented by models based on BaseNet to compute the number of hidden neurons that the output layer takes as input. 
+        Return the number of channels that the convolution before output layer should take as input 
+        to reduce them to 1 channel
+        This method has to be implemented by models based on BaseNet to compute the number of hidden 
+        neurons that the output layer takes as input. 
         """
         return self.nb_features
 

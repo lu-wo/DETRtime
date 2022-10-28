@@ -1,16 +1,18 @@
-import torch
-import torch.utils.data
-import pandas as pd
-import numpy as np
-from torch.utils.data import TensorDataset, DataLoader
-from torch.utils.data.sampler import WeightedRandomSampler
 import logging
 import os
-from config import config 
+
+import numpy as np
+import pandas as pd
+import torch
+import torch.utils.data
+from config import config
+from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data.sampler import WeightedRandomSampler
+
 
 class EEGSampler(torch.utils.data.sampler.Sampler):
     """
-        samples with a bit higher weight sequences that either contain saccaes or blinks
+    samples with a bit higher weight sequences that either contain saccaes or blinks
     """
 
     def __init__(self, dataset, indices: list = None, num_samples: int = None):
@@ -20,8 +22,12 @@ class EEGSampler(torch.utils.data.sampler.Sampler):
         self.indices = list(range(dataset.current_length)) if indices is None else indices
 
     def __iter__(self):
-        return (self.indices[i] for i in
-                torch.multinomial(self.dataset.weights, self.dataset.current_length, replacement=True))
+        return (
+            self.indices[i]
+            for i in torch.multinomial(
+                self.dataset.weights, self.dataset.current_length, replacement=True
+            )
+        )
 
     def __len__(self):
         return len(self.dataset)
@@ -29,7 +35,7 @@ class EEGSampler(torch.utils.data.sampler.Sampler):
 
 class EEGDataset(torch.utils.data.Dataset):
     """
-        since dataloader length depends on dataset size, we have precalculate the average length
+    since dataloader length depends on dataset size, we have precalculate the average length
     """
 
     def __init__(self, data_dir, batch_size=32, seq_length=500, validation=False):
@@ -43,21 +49,25 @@ class EEGDataset(torch.utils.data.Dataset):
         print(self.seq_length)
         for file in self.subjects:
             # print(file)
-            data = np.load(self.data_dir + '/' + file)
-            self.length += (len(data['labels']) // batch_size // seq_length)
+            data = np.load(self.data_dir + "/" + file)
+            self.length += len(data["labels"]) // batch_size // seq_length
         self.validation = validation
         self.load_new_user(self.id)
 
     def load_new_user(self, id):
         # Transform np.array to torch flaot tensor
-        data = np.load(self.data_dir + '/' + self.subjects[id])
-        X = data['EEG'].astype(np.float)
-        conv = {'L_fixation': 0, 'L_saccade': 1, 'L_blink': 2,
-                'R_fixation': 0,
-                'R_saccade': 1,
-                'R_blink': 2}
+        data = np.load(self.data_dir + "/" + self.subjects[id])
+        X = data["EEG"].astype(np.float)
+        conv = {
+            "L_fixation": 0,
+            "L_saccade": 1,
+            "L_blink": 2,
+            "R_fixation": 0,
+            "R_saccade": 1,
+            "R_blink": 2,
+        }
         func = np.vectorize(conv.get)
-        y = func(data['labels']).astype(np.float)
+        y = func(data["labels"]).astype(np.float)
         # reshaping samples
         length = len(y)
         cut = length // self.seq_length * self.seq_length
@@ -88,9 +98,13 @@ class EEGDataset(torch.utils.data.Dataset):
         blk_sac_weight = 1.0
         blk_weight = 1.0
         # print(f"only fix weight: {only_fix_weight}, blk/sacc weigth: {blk_sac_weight}")
-        mask = np.apply_along_axis(lambda x: np.count_nonzero(x == 0) < 0.9 * self.seq_length, -1, tensor_y)
+        mask = np.apply_along_axis(
+            lambda x: np.count_nonzero(x == 0) < 0.9 * self.seq_length, -1, tensor_y
+        )
         arr[mask] = blk_sac_weight
-        mask1 = np.apply_along_axis(lambda x: np.count_nonzero(x == 0) >= 0.9 * self.seq_length, -1, tensor_y)
+        mask1 = np.apply_along_axis(
+            lambda x: np.count_nonzero(x == 0) >= 0.9 * self.seq_length, -1, tensor_y
+        )
         arr[mask1] = only_fix_weight
         # mask2 = np.apply_along_axis(lambda x: np.count_nonzero(x == 2) > 0, -1, tensor_y)
         # arr[mask2] = blk_weight
@@ -109,7 +123,7 @@ class EEGDataset(torch.utils.data.Dataset):
 
     def find_conv(self, seq, subseq):
         target = np.dot(subseq, subseq)
-        candidates = np.where(np.correlate(seq, subseq, mode='valid') == target)[0]
+        candidates = np.where(np.correlate(seq, subseq, mode="valid") == target)[0]
         check = candidates[:, np.newaxis] + np.arange(len(subseq))
         mask = np.all((np.take(seq, check) == subseq), axis=-1)
         return np.any(mask)
@@ -125,58 +139,69 @@ class EEGDataset(torch.utils.data.Dataset):
                 self.id = self.id % len(self.subjects)
                 self.load_new_user(self.id)
                 self.queries = 0
-                return self.dataset[[i for i in torch.multinomial(self.weights, self.batch_size, replacement=True)]]
+                return self.dataset[
+                    [i for i in torch.multinomial(self.weights, self.batch_size, replacement=True)]
+                ]
             else:
-                return self.dataset[[i for i in torch.multinomial(self.weights, self.batch_size, replacement=True)]]
+                return self.dataset[
+                    [i for i in torch.multinomial(self.weights, self.batch_size, replacement=True)]
+                ]
         else:
             self.queries += 1
             if self.queries >= (self.current_length // self.batch_size):
-                print(f'Switching user at index {self.queries * self.batch_size}')
-                print(f'maximum was {self.current_length // self.batch_size * self.batch_size}')
+                print(f"Switching user at index {self.queries * self.batch_size}")
+                print(f"maximum was {self.current_length // self.batch_size * self.batch_size}")
                 self.id += 1
                 self.id = self.id % len(self.subjects)
                 self.load_new_user(self.id)
                 self.queries = 0
-                return self.dataset[self.queries * self.batch_size:(self.queries + 1) * self.batch_size]
+                return self.dataset[
+                    self.queries * self.batch_size : (self.queries + 1) * self.batch_size
+                ]
             else:
-                return self.dataset[self.queries * self.batch_size:(self.queries + 1) * self.batch_size]
+                return self.dataset[
+                    self.queries * self.batch_size : (self.queries + 1) * self.batch_size
+                ]
 
 
 def create_dataloader(X, y, batch_size, drop_last=True):
     """
     Input: X, y of type np.array
-    Return: pytorch dataloader containing the dataset of X and y that returns batches of size batch_size
+    Return: pytorch dataloader containing the dataset of X and y that returns batches of size
+    batch_size
     """
-    cat_dict = \
-    {
-        'Sleep stage 1': 1, 
-        'Sleep stage 2': 2, 
-        'Sleep stage 3': 3, 
-        'Sleep stage 4': 3,
-       'Sleep stage R': 4, 
-       'Sleep stage W': 0
-       } if config['dataset'] == 'sleep' else \
-    {
-        'L_fixation': 0,
-        'L_saccade': 1,
-        'L_blink': 2,
-        'R_fixation': 0,
-        'R_saccade': 1,
-        'R_blink': 2
-    } 
+    cat_dict = (
+        {
+            "Sleep stage 1": 1,
+            "Sleep stage 2": 2,
+            "Sleep stage 3": 3,
+            "Sleep stage 4": 3,
+            "Sleep stage R": 4,
+            "Sleep stage W": 0,
+        }
+        if config["dataset"] == "sleep"
+        else {
+            "L_fixation": 0,
+            "L_saccade": 1,
+            "L_blink": 2,
+            "R_fixation": 0,
+            "R_saccade": 1,
+            "R_blink": 2,
+        }
+    )
     # y[0:5, 1]
-    if config['dataset'] != 'sleep':
+    if config["dataset"] != "sleep":
         func = np.vectorize(cat_dict.get)
         y = func(y)
-    #y=np.vstack(y).astype(np.float32)
-    y = y.astype('float32') 
+    # y=np.vstack(y).astype(np.float32)
+    y = y.astype("float32")
     # Transform np.array to torch flaot tensor
     tensor_x = torch.as_tensor(X).float()
     tensor_y = torch.as_tensor(y).float()
 
     if len(tensor_y.size()) > 2:
         tensor_y = tensor_y.squeeze()
-        
+
     # Unsqueeze channel direction for eegNet model
     # if model_name == 'EEGNet':
     #     logging.info(f"Unsqueeze data for eegnet")
@@ -191,33 +216,36 @@ def create_dataloader(X, y, batch_size, drop_last=True):
     return DataLoader(dataset, batch_size=batch_size, drop_last=drop_last, num_workers=4)
 
 
-def create_biased_dataloader(X, y, batch_size, drop_last=True, seq_length = 500):
+def create_biased_dataloader(X, y, batch_size, drop_last=True, seq_length=500):
     """
     Input: X, y of type np.array
-    Return: pytorch dataloader containing the dataset of X and y that returns batches of size batch_size
+    Return: pytorch dataloader containing the dataset of X and y that returns batches of size
+    batch_size
     """
-    cat_dict = \
-    {
-        'Sleep stage 1': 1, 
-        'Sleep stage 2': 2, 
-        'Sleep stage 3': 3, 
-        'Sleep stage 4': 3,
-       'Sleep stage R': 4, 
-       'Sleep stage W': 0
-       } if config['dataset'] == 'sleep' else \
-    {
-        'L_fixation': 0,
-        'L_saccade': 1,
-        'L_blink': 2,
-        'R_fixation': 0,
-        'R_saccade': 1,
-        'R_blink': 2
-    } 
-    if config['dataset'] != 'sleep':
+    cat_dict = (
+        {
+            "Sleep stage 1": 1,
+            "Sleep stage 2": 2,
+            "Sleep stage 3": 3,
+            "Sleep stage 4": 3,
+            "Sleep stage R": 4,
+            "Sleep stage W": 0,
+        }
+        if config["dataset"] == "sleep"
+        else {
+            "L_fixation": 0,
+            "L_saccade": 1,
+            "L_blink": 2,
+            "R_fixation": 0,
+            "R_saccade": 1,
+            "R_blink": 2,
+        }
+    )
+    if config["dataset"] != "sleep":
         func = np.vectorize(cat_dict.get)
         y = func(y)
-    #y=np.vstack(y).astype(np.float32)
-    y = y.astype('float32') 
+    # y=np.vstack(y).astype(np.float32)
+    y = y.astype("float32")
     # Transform np.array to torch flaot tensor
     tensor_x = torch.as_tensor(X).float()
     tensor_y = torch.as_tensor(y).float()
@@ -235,11 +263,15 @@ def create_biased_dataloader(X, y, batch_size, drop_last=True, seq_length = 500)
     # print(f"only fix weight: {only_fix_weight}, blk/sacc weigth: {blk_sac_weight}")
     mask = np.apply_along_axis(lambda x: np.count_nonzero(x == 0) < 0.9 * seq_length, -1, tensor_y)
     arr[mask] = blk_sac_weight
-    mask1 = np.apply_along_axis(lambda x: np.count_nonzero(x == 0) >= 0.9 * seq_length, -1, tensor_y)
+    mask1 = np.apply_along_axis(
+        lambda x: np.count_nonzero(x == 0) >= 0.9 * seq_length, -1, tensor_y
+    )
     arr[mask1] = only_fix_weight
     weights = torch.DoubleTensor(arr.tolist())
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # Create dataset and dataloader
     sampler = WeightedRandomSampler(weights, length)
     dataset = TensorDataset(tensor_x, tensor_y)
-    return DataLoader(dataset, batch_size=batch_size, drop_last=drop_last, num_workers=4, sampler=sampler)
+    return DataLoader(
+        dataset, batch_size=batch_size, drop_last=drop_last, num_workers=4, sampler=sampler
+    )

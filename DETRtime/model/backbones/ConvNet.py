@@ -1,7 +1,9 @@
-from torch import nn
-import torch
-from .modules import Pad_Pool, Pad_Conv
 import logging
+
+import torch
+from torch import nn
+
+from .modules import Pad_Conv, Pad_Pool
 
 
 class ConvNet(nn.Module):
@@ -11,7 +13,17 @@ class ConvNet(nn.Module):
     Modules are then stacked in the forward() pass of the model
     """
 
-    def __init__(self, input_shape, output_shape, kernel_size=32, nb_filters=32, batch_size=64, use_residual=True, depth=12, maxpools = []):
+    def __init__(
+        self,
+        input_shape,
+        output_shape,
+        kernel_size=32,
+        nb_filters=32,
+        batch_size=64,
+        use_residual=True,
+        depth=12,
+        maxpools=[],
+    ):
         """
         We define the layers of the network in the __init__ function
         """
@@ -23,8 +35,8 @@ class ConvNet(nn.Module):
         self.depth = depth
         self.kernel_size = kernel_size
         self.nb_filters = nb_filters
-        self.use_residual = False #use_residual
-        self.batch_size= batch_size
+        self.use_residual = False  # use_residual
+        self.batch_size = batch_size
 
         # Define all the convolutional and shortcut modules that we will need in the model
         self.conv_blocks = nn.ModuleList([self._module(d) for d in range(self.depth)])
@@ -41,25 +53,29 @@ class ConvNet(nn.Module):
             pools = maxpools
             logging.info(f"Using max pools : pool {pools}")
             self.use_maxpool = True
-            self.max_pool = nn.ModuleList([nn.MaxPool1d(pools[i], stride = pools[i]) for i in range(self.depth)])
+            self.max_pool = nn.ModuleList(
+                [nn.MaxPool1d(pools[i], stride=pools[i]) for i in range(self.depth)]
+            )
         else:
             self.use_maxpool = False
-            logging.info(f'Not using max pools : {maxpools}')
+            logging.info(f"Not using max pools : {maxpools}")
         # else:
         #     logging.info(f"Using default pool {self.depth * (4,)}")
         #     self.max_pool = nn.ModuleList([nn.MaxPool1d(4, stride = 4) for i in range(self.depth)])
-        logging.info(f"Number of backbone parameters: {sum(p.numel() for p in self.parameters())}")
-        logging.info(
-            f"Number of trainable backbone parameters: {sum(p.numel() for p in self.parameters() if p.requires_grad)}")
-        logging.info('--------------- use residual : ' + str(self.use_residual))
-        logging.info('--------------- depth        : ' + str(self.depth))
-        logging.info('--------------- kernel size  : ' + str(self.kernel_size))
-        logging.info('--------------- nb filters   : ' + str(self.nb_filters))
+        n_params_backbone = sum(p.numel() for p in self.parameters())
+        logging.info(f"Number of backbone parameters: {n_params_backbone}")
+        n_params_backbone_trainable = sum(p.numel() for p in self.parameters() if p.requires_grad)
+        logging.info(f"Number of trainable backbone parameters: {n_params_backbone_trainable}")
+        logging.info(f"--------------- use residual : {self.use_residual}")
+        logging.info(f"--------------- depth        : {str(self.depth)}")
+        logging.info(f"--------------- kernel size  : {str(self.kernel_size)}")
+        logging.info(f"--------------- nb filters   : {str(self.nb_filters)}")
 
     def forward(self, x):
         """
         Implements the forward pass of the network
-        Modules defined in a class implementing ConvNet are stacked and shortcut connections are used if specified.
+        Modules defined in a class implementing ConvNet are stacked and shortcut connections are
+        used if specified.
         """
         input_res = x  # set for the residual shortcut connection
         # Stack the modules and residual connection
@@ -78,8 +94,8 @@ class ConvNet(nn.Module):
                 input_res = x
         x = self.gap_layer_pad(x)
         x = self.gap_layer(x)
-        #x = x.view(self.batch_size, -1)
-        #output = self.output_layer(x)  # Defined in BaseNet
+        # x = x.view(self.batch_size, -1)
+        # output = self.output_layer(x)  # Defined in BaseNet
         output = x
         return output
 
@@ -87,13 +103,17 @@ class ConvNet(nn.Module):
         """
         Implements a shortcut with a convolution and batch norm
         This is the same for all models implementing ConvNet, therefore defined here
-        Padding before convolution for constant tensor shape, similar to tensorflow.keras padding=same
+        Padding before convolution for constant tensor shape, similar to tensorflow.keras
+        padding=same
         """
         return nn.Sequential(
             Pad_Conv(kernel_size=self.kernel_size, value=0),
-            nn.Conv1d(in_channels=self.nb_channels if depth == 0 else self.nb_features,
-                      out_channels=self.nb_features, kernel_size=self.kernel_size),
-            nn.BatchNorm1d(num_features=self.nb_features)
+            nn.Conv1d(
+                in_channels=self.nb_channels if depth == 0 else self.nb_features,
+                out_channels=self.nb_features,
+                kernel_size=self.kernel_size,
+            ),
+            nn.BatchNorm1d(num_features=self.nb_features),
         )
 
     def get_nb_features_output_layer(self):
