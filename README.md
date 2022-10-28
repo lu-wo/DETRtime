@@ -1,8 +1,10 @@
-## DETRtime: A Deep Learning Approach for the Segmentation of Electroencephalography Data in Eye Tracking Applications
+# DETRtime
+## A Deep Learning Approach for the Segmentation of Electroencephalography Data in Eye Tracking Applications
 #### Published in the [proceedings](https://proceedings.mlr.press/v162/wolf22a.html) of the 39th International Conference on Machine Learning (ICML) 2022
-#### The paper can be found on [arXiv](https://arxiv.org/abs/2206.08672)
 
-DETRtime is a novel framework for time-series segmentation. We use it to create an ocular event detector that does not require additionally recorded eye-tracking modality and rely solely on EEG data. Our end-to-end deep learning-based framework brings recent advances in Computer Vision to the forefront of the times series segmentation of EEG data. Compared to other time series segmentation solutions, we tackle the problem via instance segmentation (instead of semantic segmentation).
+[![Paper ICML 2022](http://img.shields.io/badge/paper-arxiv.2206.08672-B31B1B.svg)](https://arxiv.org/abs/2206.08672)
+
+DETRtime is a framework for time-series segmentation. We use it to create an ocular event detector that does not require additionally recorded eye-tracking modality and rely solely on EEG data. Our end-to-end deep learning-based framework brings recent advances in Computer Vision to the forefront of the times series segmentation of EEG data. Compared to other time series segmentation solutions, we tackle the problem via instance segmentation (instead of semantic segmentation).
 
 ## Overview
 
