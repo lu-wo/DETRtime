@@ -1,12 +1,12 @@
 date=$(date +%y-%m-%d-%H-%M)    
 modelname=$'movie_3class'
 
-nohup python main.py \
-	--data_path /home/ubuntu/projects/data/ICML_movie_min_segmentation_minseq_500_margin_1_amp_thresh_10000/tensors \
+python main.py \
+	--data_path /path/to/data \
 	--backbone inception_time \
 	--lr_backbone 1e-4 \
 	--nb_filters 16 \
-	--use_residuals False \
+	--use_residual False \
 	--backbone_depth 6 \
 	--batch_size 32 \
 	--bbox_loss_coef 10 \
