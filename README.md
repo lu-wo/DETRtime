@@ -10,7 +10,7 @@ DETRtime is a framework for time-series segmentation. We use it to create an ocu
 
 The repository consists of general functionality to run the DETRtime model and it's supplementing Baseline architectures from the paper on all benchmarked datasets. The Baselines contain state-of-the-art architectures such as U-Net, SalientSleepNet, InceptionTime, Xception, and many more. 
 
-All models can be run on different segmentation datasets. We provide 4 ocular event datasets (large grid paradigm and visual symbol search as well as the real-world paradigms of watching movies and reading text). In addition to that, the models can be benchmarked on the publicly available Sleep-EDF-153 dataset for sleep stage segmentation available here: [sleep-edf](https://www.physionet.org/content/sleep-edfx/1.0.0/).
+All models can be run on different segmentation datasets. We provide 4 ocular event datasets: Large grid paradigm (dots) and visual symbol search (vss) as well as the more natural paradigms of watching movies and reading text (zuco). The ocular event datasets are available in the segmentation section of the [EEGEyeNet OSF repository](https://osf.io/ktv7m/). In addition to that, the models can be benchmarked on the publicly available Sleep-EDF-153 dataset for sleep stage segmentation available here: [sleep-edf](https://www.physionet.org/content/sleep-edfx/1.0.0/).
 
 ## Installation (Environment)
 
