@@ -214,7 +214,7 @@ def main(args):
         logging.info("Using train_30")
         scaler, data_loader_train = create_dataloader(
             data_dir=args.data_path,
-            file="train_no_neg1.npz",
+            file="train.npz",
             validation=False,
             batch_size=args.batch_size,
             workers=args.num_workers,
@@ -230,7 +230,7 @@ def main(args):
         logging.info("Loading validation data.")
         _, data_loader_val = create_dataloader(
             data_dir=args.data_path,
-            file="val_no_neg1.npz",
+            file="val.npz",
             validation=True,
             batch_size=args.batch_size,
             workers=args.num_workers,
@@ -275,7 +275,7 @@ def main(args):
         logging.info("Loading test data.")
         _, data_loader_test = create_dataloader(
             data_dir=args.data_path,
-            file="test_no_neg1.npz",
+            file="test.npz",
             validation=True,
             batch_size=args.batch_size,
             workers=args.num_workers,

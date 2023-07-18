@@ -133,3 +133,4 @@ dmypy.json
 
 # os files 
 .idea/
+.DS_Store
