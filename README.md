@@ -93,3 +93,17 @@ To start the baseline benchmark, run
 python3 main.py
 ```
 
+## Citation
+
+```
+@misc{wolf2022deep,
+      title={A Deep Learning Approach for the Segmentation of Electroencephalography Data in Eye Tracking Applications}, 
+      author={Lukas Wolf and Ard Kastrati and Martyna Beata Płomecka and Jie-Ming Li and Dustin Klebe and Alexander Veicht and Roger Wattenhofer and Nicolas Langer},
+      year={2022},
+      eprint={2206.08672},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
+
+
